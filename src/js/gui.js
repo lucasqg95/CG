@@ -22,3 +22,9 @@ const loadGUI = () => {
     "Previous Product"
   );
 };
+
+const prevButton = document.getElementById("prev");
+const nextButton = document.getElementById("next");
+
+prevButton.addEventListener("click", () => setDiretion("left"));
+nextButton.addEventListener("click", () => setDiretion("right"));

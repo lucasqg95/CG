@@ -1,9 +1,46 @@
-@import url('https://webgl2fundamentals.org/webgl/resources/webgl-tutorials.css');
+@import url("https://webgl2fundamentals.org/webgl/resources/webgl-tutorials.css");
 body {
   margin: 0;
+  position: relative;
 }
 canvas {
   width: 100vw;
   height: 100vh;
   display: block;
+}
+
+.options {
+  position: absolute;
+  bottom: 10%;
+  width: 100%;
+}
+
+.options .prev {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 50px;
+  height: 50px;
+  background-color: rgba(255, 255, 255, 0.6);
+  border: 1px solid black;
+  border-radius: 50%;
+  text-align: center;
+  line-height: 50px;
+  font-size: 30px;
+  cursor: pointer;
+}
+
+.options .next {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 50px;
+  height: 50px;
+  background-color: rgba(255, 255, 255, 0.6);
+  border: 1px solid black;
+  border-radius: 50%;
+  text-align: center;
+  line-height: 50px;
+  font-size: 30px;
+  cursor: pointer;
 }

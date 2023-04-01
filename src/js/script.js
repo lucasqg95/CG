@@ -1,30 +1,40 @@
+let cameraPosition = [0, 0, 0];
+let moveDirection = 0;
+let moveSpeed = 0.4;
+let moveCounter = 0;
+let moveOffset = 0;
+
 async function main() {
   const { gl, meshProgramInfo } = initializeWorld();
 
-  const bananaData = await getBananaObject(gl, meshProgramInfo);
-
-  const bananaUniforms = {
-    u_texture: bananaData.texture,
-    u_matrix: m4.identity(),
-  };
+  const objectsData = await Promise.all([
+    getBananaObject(gl, meshProgramInfo),
+    getAppleObject(gl, meshProgramInfo),
+    getAvocadoObject(gl, meshProgramInfo),
+    getBananaObject(gl, meshProgramInfo),
+  ]).then((loadedObj) => {
+    return loadedObj;
+  });
 
   var fieldOfViewRadians = degToRad(60);
 
-  function computeMatrix(viewProjectionMatrix, translation, yRotation) {
-    var matrix = m4.translate(
-      viewProjectionMatrix,
-      translation[0],
-      translation[1],
-      translation[2]
-    );
-    return m4.yRotate(matrix, yRotation);
-  }
+  // function computeMatrix(viewProjectionMatrix, translation, yRotation, scale) {
+  //   var matrix = m4.translate(
+  //     viewProjectionMatrix,
+  //     translation[0],
+  //     translation[1],
+  //     translation[2]
+  //   );
+
+  //   matrix = m4.yRotate(matrix, yRotation);
+  //   return matrix;
+  // }
 
   loadGUI();
 
   console.log(gl.getError());
   function render() {
-    gl.clearColor(0.7, 0.8, 0, 1); // sets the background color to green
+    gl.clearColor(1, 1, 1, 1); // sets the background color to green
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT); // clears the color and depth buffer
 
     twgl.resizeCanvasToDisplaySize(gl.canvas);
@@ -37,23 +47,34 @@ async function main() {
     var projectionMatrix = m4.perspective(fieldOfViewRadians, aspect, 1, 2000);
 
     // Compute the camera's matrix using look at.
-    var cameraPosition = [20, 100, 200];
-    var target = [0, 0, 0];
-    var up = [0, 1, 0];
-    var cameraMatrix = m4.lookAt(cameraPosition, target, up);
 
     // Make a view matrix from the camera matrix.
-    var viewMatrix = m4.inverse(cameraMatrix);
+    var camera = m4.yRotation(degToRad(0));
+    camera = m4.translate(camera, 0, 10, 50);
 
-    var viewProjectionMatrix = m4.multiply(projectionMatrix, viewMatrix);
+    var viewMatrix = m4.inverse(moveCamera(moveDirection, camera));
+
+    if (moveCounter > 36) {
+      moveCounter = 0;
+      moveDirection = 0;
+    } else if (moveCounter < -36) {
+      moveCounter = 0;
+      moveDirection = 0;
+    }
+
+    const sharedUniforms = {
+      u_lightDirection: m4.normalize([-1, 3, 5]),
+      u_view: viewMatrix,
+      u_projection: projectionMatrix,
+      u_viewWorldPosition: cameraPosition,
+    };
+
+    console.log(moveDirection);
 
     gl.useProgram(meshProgramInfo.program);
+    twgl.setUniforms(meshProgramInfo, sharedUniforms);
 
-    // ------ Draw the banana --------
-
-    // Bind the texture
-    gl.activeTexture(gl.TEXTURE0);
-    gl.bindTexture(gl.TEXTURE_2D, bananaData.texture);
+    // ------ Draw objects --------
 
     // Set the texture coordinate attribute
     const texcoordLocation = gl.getAttribLocation(
@@ -62,28 +83,33 @@ async function main() {
     );
 
     gl.enableVertexAttribArray(texcoordLocation);
-    gl.bindBuffer(
-      gl.ARRAY_BUFFER,
-      bananaData.bufferInfo.attribs.a_texcoord.buffer
-    );
+
     gl.vertexAttribPointer(texcoordLocation, 2, gl.FLOAT, false, 0, 0);
 
-    // Setup all the needed attributes.
-    gl.bindVertexArray(bananaData.vao);
+    // Set the position attribute
+    var move = 0;
 
-    const bananaTranslation = [0, 0, 0]; // Update these values to match the banana's position
-    const bananaRotation = 0; // Update this value to match the banana's rotation
+    objectsData.forEach(function (object) {
+      let u_world = m4.identity();
 
-    bananaUniforms.u_matrix = computeMatrix(
-      viewProjectionMatrix,
-      bananaTranslation,
-      bananaRotation
-    );
+      u_world = m4.translate(u_world, move, 0, 0);
+      u_world = m4.scale(u_world, ...object.scale);
+      u_world = m4.translate(u_world, ...object.offset);
 
-    // Set the uniforms we just computed
-    twgl.setUniforms(meshProgramInfo, bananaUniforms);
+      for (const { bufferInfo, vao, material } of object.parts) {
+        gl.bindVertexArray(vao);
+        twgl.setUniforms(
+          meshProgramInfo,
+          {
+            u_world,
+          },
+          material
+        );
+        twgl.drawBufferInfo(gl, bufferInfo);
+      }
 
-    twgl.drawBufferInfo(gl, bananaData.bufferInfo);
+      move += 40;
+    });
     requestAnimationFrame(render);
   }
 

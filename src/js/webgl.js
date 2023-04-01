@@ -1,41 +1,87 @@
-const vertexShaderSource = `#version 300 es
-// an attribute is an input (in) to a vertex shader.
-// It will receive data from a buffer
-in vec4 a_position;
-in vec2 a_texcoord;
+const vs = `#version 300 es
+  in vec4 a_position;
+  in vec3 a_normal;
+  in vec3 a_tangent;
+  in vec2 a_texcoord;
+  in vec4 a_color;
 
-// A matrix to transform the positions by
-uniform mat4 u_matrix;
+  uniform mat4 u_projection;
+  uniform mat4 u_view;
+  uniform mat4 u_world;
+  uniform vec3 u_viewWorldPosition;
 
-// a varying to pass the texture coordinates to the fragment shader
-out vec2 v_texcoord;
+  out vec3 v_normal;
+  out vec3 v_tangent;
+  out vec3 v_surfaceToView;
+  out vec2 v_texcoord;
+  out vec4 v_color;
 
-// all shaders have a main function
-void main() {
-  // Multiply the position by the matrix.
-  gl_Position = u_matrix * a_position;
+  void main() {
+    vec4 worldPosition = u_world * a_position;
+    gl_Position = u_projection * u_view *  worldPosition;
+    v_surfaceToView = u_viewWorldPosition - worldPosition.xyz;
 
-  // Pass the texcoord to the fragment shader.
-  v_texcoord = a_texcoord;
-}
-`;
+    mat3 normalMat = mat3(u_world);
+    v_normal = normalize(normalMat * a_normal);
+    v_tangent = normalize(normalMat * a_tangent);
 
-const fragmentShaderSource = `#version 300 es
-precision highp float;
+    v_texcoord = a_texcoord;
+    v_color = a_color;
+  }
+  `;
 
-// Passed in from the vertex shader.
-in vec2 v_texcoord;
+const fs = `#version 300 es
+  precision highp float;
 
-// The texture.
-uniform sampler2D u_texture;
+  in vec3 v_normal;
+  in vec3 v_tangent;
+  in vec3 v_surfaceToView;
+  in vec2 v_texcoord;
+  in vec4 v_color;
 
-// we need to declare an output for the fragment shader
-out vec4 outColor;
+  uniform vec3 diffuse;
+  uniform sampler2D diffuseMap;
+  uniform vec3 ambient;
+  uniform vec3 emissive;
+  uniform vec3 specular;
+  uniform sampler2D specularMap;
+  uniform float shininess;
+  uniform sampler2D normalMap;
+  uniform float opacity;
+  uniform vec3 u_lightDirection;
+  uniform vec3 u_ambientLight;
 
-void main() {
-  outColor = texture(u_texture, v_texcoord);
-}
-`;
+  out vec4 outColor;
+
+  void main () {
+    vec3 normal = normalize(v_normal) * ( float( gl_FrontFacing ) * 2.0 - 1.0 );
+    vec3 tangent = normalize(v_tangent) * ( float( gl_FrontFacing ) * 2.0 - 1.0 );
+    vec3 bitangent = normalize(cross(normal, tangent));
+
+    mat3 tbn = mat3(tangent, bitangent, normal);
+    normal = texture(normalMap, v_texcoord).rgb * 2. - 1.;
+    normal = normalize(tbn * normal);
+
+    vec3 surfaceToViewDirection = normalize(v_surfaceToView);
+    vec3 halfVector = normalize(u_lightDirection + surfaceToViewDirection);
+
+    float fakeLight = dot(u_lightDirection, normal) * .5 + .5;
+    float specularLight = clamp(dot(normal, halfVector), 0.0, 1.0);
+    vec4 specularMapColor = texture(specularMap, v_texcoord);
+    vec3 effectiveSpecular = specular * specularMapColor.rgb;
+
+    vec4 diffuseMapColor = texture(diffuseMap, v_texcoord);
+    vec3 effectiveDiffuse = diffuse * diffuseMapColor.rgb * v_color.rgb;
+    float effectiveOpacity = opacity * diffuseMapColor.a * v_color.a;
+
+    outColor = vec4(
+        emissive +
+        ambient * u_ambientLight +
+        effectiveDiffuse * fakeLight +
+        effectiveSpecular * pow(specularLight, shininess),
+        effectiveOpacity);
+  }
+  `;
 
 const initializeWorld = () => {
   const canvas = document.querySelector("#canvas");
@@ -44,12 +90,7 @@ const initializeWorld = () => {
     return;
   }
   twgl.setAttributePrefix("a_");
-  const meshProgramInfo = twgl.createProgramInfo(gl, [
-    vertexShaderSource,
-    fragmentShaderSource,
-  ]);
-
-  console.log(meshProgramInfo);
+  const meshProgramInfo = twgl.createProgramInfo(gl, [vs, fs]);
 
   return {
     gl,

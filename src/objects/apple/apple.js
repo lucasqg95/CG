@@ -1,18 +1,9 @@
 async function getAppleObject(gl, meshProgramInfo) {
-  fetch("Apple.obj")
-    .then((response) => response.text())
-    .then((text) => {
-      console.log(text);
-      const objData = parseOBJ(text);
+  const textureUrl = "/src/objects/apple/apple.obj"; // Change the texture URL
+  const objectData = await loadObject(gl, meshProgramInfo, textureUrl); // Load the texture
 
-      // Create buffers for the mesh data
-      const bufferInfo = twgl.createBufferInfoFromArrays(gl, objData);
+  const translation = [40, 0, 0];
+  const scale = [0.15, 0.15, 0.15];
 
-      // Create a VAO for the mesh
-      const vao = twgl.createVAOFromBufferInfo(gl, meshProgramInfo, bufferInfo);
-      return vao;
-    })
-    .catch((e) => {
-      console.log(e);
-    });
+  return { ...objectData, scale, translation };
 }
