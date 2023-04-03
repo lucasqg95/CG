@@ -11,9 +11,36 @@
   </head>
 
   <body>
-    <canvas id="canvas"></canvas>
+    <header>
+      <ul>
+        <li><a href="/">Home</a></li>
+        <li><a href="/cart.html">Cart</a></li>
+      </ul>
+    </header>
+    <!--  Canvas  -->
+    <canvas
+      id="canvas"
+      style="width: 100%; height: calc(100vh - 59px)"
+    ></canvas>
+    <div class="product-description">
+      <h1 id="product-name">asfasfasfas</h1>
+      <p id="product-description">asfasfasfs</p>
+      <div id="uiContainer">
+        <div id="ui">
+          <div id="x"></div>
+          <div id="y"></div>
+          <div id="zoom"></div>
+        </div>
+      </div>
+      <div class="colorsContainer">
+        <button class="colorButton red" id="red"></button>
+        <button class="colorButton green" id="green"></button>
+        <button class="colorButton blue" id="blue"></button>
+      </div>
+    </div>
     <div class="options">
       <button class="prev" id="prev"><</button>
+      <button class="buy" id="buy">Comprar</button>
       <button class="next" id="next">></button>
     </div>
 
@@ -21,6 +48,7 @@
     <script src="https://webgl2fundamentals.org/webgl/resources/twgl-full.min.js"></script>
     <script src="https://webgl2fundamentals.org/webgl/resources/m4.js"></script>
     <script src="https://webgl2fundamentals.org/webgl/resources/flattened-primitives.js"></script>
+    <script src="https://webgl2fundamentals.org/webgl/resources/chroma.min.js"></script>
     <script src="https://webgl2fundamentals.org/webgl/resources/webgl-lessons-ui.js"></script>
     <script src="src/lib/dat.gui.min.js"></script>
     <script src="src/js/webgl.js"></script>
@@ -28,9 +56,10 @@
     <script src="src/js/gui.js"></script>
     <script src="src/js/obj.js"></script>
     <script src="src/objects/apple/apple.js"></script>
-    <script src="src/objects/avocado/avocado.js"></script>
     <script src="src/objects/banana/banana.js"></script>
-    <script src="src/objects/orange/orange.js"></script>
+    <script src="src/objects/strawberry/strawberry.js"></script>
+    <script src="src/objects/watermelon/watermelon.js"></script>
+    <script src="src/objects/avocado/avocado.js"></script>
     <script src="src/js/script.js"></script>
   </body>
 </html>

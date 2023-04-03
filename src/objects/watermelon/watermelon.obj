@@ -1,7 +1,7 @@
 # Blender v2.91.2 OBJ File: 'SMK_JJ0KQAO2_Watermelon_2.91.blend'
 # www.blender.org
-mtllib SMK_JJ0KQAO2_Watermelon_2.91.mtl
-o SMK_JJ0KQAO2_Watermelon
+mtllib watermelon.mtl
+o watermelon
 v 0.090593 0.134247 -0.149333
 v 0.093145 0.145037 -0.150372
 v 0.111461 0.145273 -0.137016

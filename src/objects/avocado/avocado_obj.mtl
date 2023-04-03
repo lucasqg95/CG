@@ -1,0 +1,30 @@
+# Blender MTL File: 'avocado_blender_3.0.blend'
+# Material Count: 2
+
+newmtl avocado_full_texture
+Ns 225.000000
+Ka 1.000000 1.000000 1.000000
+Kd 0.800000 0.800000 0.800000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 2
+map_Bump avocado_full_Normal.png
+map_Kd avocado_full_BaseColor.png
+map_Ns avocado_full_Roughness.png
+refl avocado_full_Metallic.png
+
+newmtl avocado_half_texture
+Ns 225.000000
+Ka 1.000000 1.000000 1.000000
+Kd 0.800000 0.800000 0.800000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 2
+map_Bump avocado_half_Normal.png
+map_Kd avocado_half_BaseColor.png
+map_Ns avocado_half_Roughness.png
+refl avocado_half_Metallic.png

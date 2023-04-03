@@ -1,37 +1,10 @@
 async function getWatermelonObject(gl, meshProgramInfo) {
-  const watermelonData = fetch("/src/objects/watermelon/watermelon.obj")
-    .then((response) => response.text())
-    .then(async (text) => {
-      const objData = parseOBJ(text);
+  const textureUrl = "/src/objects/watermelon/watermelon.obj"; // Change the texture URL
+  const objectData = await loadObject(gl, meshProgramInfo, textureUrl); // Load the texture
 
-      // Create buffers for the mesh data
-      const bufferInfo = twgl.createBufferInfoFromArrays(gl, objData);
+  const translation = [40, 0, 0];
+  const scale = [40, 40, 40];
+  const color = [0.0, 0.5, 0.0, 1.0];
 
-      // Create a VAO for the mesh
-      const vao = twgl.createVAOFromBufferInfo(gl, meshProgramInfo, bufferInfo);
-
-      const textureUrl = "/src/objects/watermelon/watermelon.png"; // Change the texture URL
-      const texture = await loadTexture(gl, textureUrl); // Load the texture
-
-      const uniforms = {
-        u_texture: texture,
-        u_matrix: m4.identity(),
-      };
-      const translation = [160, 0, 0];
-      const scale = [1, 1, 1];
-
-      return {
-        bufferInfo,
-        vao,
-        texture,
-        uniforms,
-        translation,
-        scale,
-      };
-    })
-    .catch((e) => {
-      console.log(e);
-    });
-
-  return watermelonData;
+  return { ...objectData, scale, translation };
 }

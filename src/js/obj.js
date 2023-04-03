@@ -373,6 +373,7 @@ async function loadObject(gl, meshProgramInfo, objName) {
     }
     const bufferInfo = twgl.createBufferInfoFromArrays(gl, data);
     const vao = twgl.createVAOFromBufferInfo(gl, meshProgramInfo, bufferInfo);
+
     return {
       material: {
         ...defaultMaterial,
@@ -380,6 +381,7 @@ async function loadObject(gl, meshProgramInfo, objName) {
       },
       bufferInfo,
       vao,
+      data,
     };
   });
 
