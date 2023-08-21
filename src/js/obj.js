@@ -381,7 +381,6 @@ async function loadObject(gl, meshProgramInfo, objName) {
       },
       bufferInfo,
       vao,
-      data,
     };
   });
 
