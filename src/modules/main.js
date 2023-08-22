@@ -241,6 +241,54 @@ async function main() {
       twgl.drawBufferInfo(gl, bufferInfo);
     }
 
+    u_world = m4.identity();
+    u_world = m4.scale(u_world, ...birdData.scale);
+    u_world = m4.translate(
+      u_world,
+      ...[
+        ((birdMovement - 0) / (1 - 0)) * (100 - birdData.offset[0] + 200) +
+          birdData.offset[0],
+        birdData.offset[1] + 20,
+        birdData.offset[2] - 20,
+      ]
+    );
+
+    for (let { bufferInfo, vao, material } of birdData.parts) {
+      gl.bindVertexArray(vao);
+      twgl.setUniforms(
+        meshProgramInfo,
+        {
+          u_world,
+        },
+        material
+      );
+      twgl.drawBufferInfo(gl, bufferInfo);
+    }
+
+    u_world = m4.identity();
+    u_world = m4.scale(u_world, ...birdData.scale);
+    u_world = m4.translate(
+      u_world,
+      ...[
+        ((birdMovement - 0) / (1 - 0)) * (200 - birdData.offset[0] + 200) +
+          birdData.offset[0],
+        birdData.offset[1] - 10,
+        birdData.offset[2] - 10,
+      ]
+    );
+
+    for (let { bufferInfo, vao, material } of birdData.parts) {
+      gl.bindVertexArray(vao);
+      twgl.setUniforms(
+        meshProgramInfo,
+        {
+          u_world,
+        },
+        material
+      );
+      twgl.drawBufferInfo(gl, bufferInfo);
+    }
+
     requestAnimationFrame(render);
   }
 
