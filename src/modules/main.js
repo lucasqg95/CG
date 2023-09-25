@@ -1,10 +1,5 @@
-import { cubicBezierPointAndTangent } from "./camera.js";
-import {
-  birdbject,
-  buildingObject,
-  groundObject,
-  treeObject,
-} from "./objectsLoader.js";
+import { cameraMovement, cubicBezierPointAndTangent } from "./camera.js";
+import { birdbject, buildingObject, treeObject } from "./objectsLoader.js";
 import { TREES_POSTION, degToRad } from "./utils.js";
 
 //camera settings
@@ -14,14 +9,19 @@ let cameraPosition = [-269.4296871180335, 38.1232870679158, cameraZoomOffset];
 let target = [703.8646233146919, 677.0565082486469, -700.0000000000001];
 
 const controlPoints = [
-  [-269.4296871180335, 38.1232870679158, 1000],
-  [-169.2492779778083, 135.3462283569189, 900],
-  [-15.5561744307941, 160.902587376284, 800],
-  [52.6785026331906, 166.4697379970672, 700],
-  [166.9482460410798, 143.2845726679302, 600],
-  [-96.3689887684041, -15.6994181604381, 500],
-  [117.2657489072149, -93.5353303368267, 400],
-  [334.212653058425, 145.7686975246234, 100],
+  [-10.05, 4.5, 11.67],
+  [-18.35, 5.2, 29.85],
+  [-8.11, 5.8, 21.92],
+  [2.15, 4.8, 25.49],
+  [12.24, 1, 23.25],
+  [26.32, -0.5, 23.55],
+  [23.77, 1.5, 7.69],
+  [19.29, 0.8, -14.12],
+  [4.95, -0.2, -54.78],
+  [-11.05, 2.5, -42.89],
+  [-23.89, -1, -28.57],
+  [-6.72, 0.7, -4.18],
+  [-10.05, 4.5, 11.67],
 ];
 
 //tree settings
@@ -30,14 +30,6 @@ const treesPosition = TREES_POSTION;
 async function main() {
   const { gl, meshProgramInfo } = initializeWorld();
 
-  const objectsData = await Promise.all([groundObject(gl, meshProgramInfo)])
-    .then(async (loadedObj) => {
-      return loadedObj;
-    })
-    .finally(() => {
-      console.log("All objects loaded");
-    });
-
   const birdData = await birdbject(gl, meshProgramInfo);
 
   const buildingData = await buildingObject(gl, meshProgramInfo);
@@ -45,6 +37,28 @@ async function main() {
   const treeData = await treeObject(gl, meshProgramInfo);
 
   var fieldOfViewRadians = degToRad(60);
+
+  // ------ Terrain Controls --------
+
+  // ------ Camera Controls --------
+
+  const canvas = document.querySelector("#canvas");
+
+  let isMouseDragging = true;
+
+  canvas.addEventListener("mousedown", () => {
+    isMouseDragging = true;
+  });
+
+  canvas.addEventListener("mouseup", () => {
+    isMouseDragging = false;
+  });
+
+  canvas.addEventListener("mousemove", (e) => {
+    if (isMouseDragging) {
+      target = cameraMovement(e, target);
+    }
+  });
 
   // ------ Objects Controls --------
 
@@ -113,7 +127,6 @@ async function main() {
 
       updateCameraAnim();
       cameraPosition = position;
-      target = tangent;
     } else if (t >= 1 && startButton.textContent === "Stop") {
       updateSliderValue();
       t = 0;
@@ -136,27 +149,6 @@ async function main() {
     twgl.setUniforms(meshProgramInfo, sharedUniforms);
 
     // ------ Draw objects --------
-
-    // Set the position attribute
-
-    objectsData.forEach(function (object, index) {
-      let u_world = m4.identity();
-
-      u_world = m4.scale(u_world, ...object.scale);
-      u_world = m4.translate(u_world, ...object.offset);
-
-      for (let { bufferInfo, vao, material } of object.parts) {
-        gl.bindVertexArray(vao);
-        twgl.setUniforms(
-          meshProgramInfo,
-          {
-            u_world,
-          },
-          material
-        );
-        twgl.drawBufferInfo(gl, bufferInfo);
-      }
-    });
 
     // Draw building
     let u_world = m4.identity();

@@ -1,3 +1,16 @@
+// camera mouse movement
+
+export function cameraMovement(e, cameraTarget) {
+  const deltaX = e.movementX;
+  const deltaY = e.movementY;
+
+  const sensitivity = 1.5;
+  cameraTarget[0] += deltaX * sensitivity;
+  cameraTarget[1] -= deltaY * sensitivity;
+
+  return cameraTarget;
+}
+
 export function cubicBezierPointAndTangent(controlPoints, t) {
   const n = controlPoints.length - 1;
   const p = [0, 0, 0];
