@@ -27,30 +27,3 @@ export function randomBetweenMinus20And20() {
   } while (randomNumber >= -10 && randomNumber < 10);
   return randomNumber;
 }
-
-export function cubicBezierPointAndTangent(controlPoints, t) {
-  const n = controlPoints.length - 1;
-  const p = vec3.create();
-  const tangent = vec3.create();
-  for (let i = 0; i <= n; i++) {
-    const b =
-      binomialCoefficient(n, i) * Math.pow(1 - t, n - i) * Math.pow(t, i);
-    vec3.scaleAndAdd(p, p, controlPoints[i], b);
-    if (i < n) {
-      const tangentTerm = n * (controlPoints[i + 1] - controlPoints[i]);
-      vec3.scaleAndAdd(tangent, tangent, tangentTerm, b);
-    }
-  }
-  return { position: p, tangent: tangent };
-}
-
-// Calculate binomial coefficient
-export function binomialCoefficient(n, k) {
-  if (k < 0 || k > n) return 0;
-  if (k === 0 || k === n) return 1;
-  let result = 1;
-  for (let i = 1; i <= k; i++) {
-    result *= (n - i + 1) / i;
-  }
-  return result;
-}
