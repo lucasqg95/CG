@@ -1,44 +1,136 @@
 import { cameraMovement, cubicBezierPointAndTangent } from "./camera.js";
-import { birdbject, buildingObject, treeObject } from "./objectsLoader.js";
-import { TREES_POSTION, degToRad } from "./utils.js";
+import { birdbject, buildingObject } from "./objectsLoader.js";
+import { degToRad } from "./utils.js";
 
 //camera settings
 let t = 0;
-let cameraZoomOffset = 1000;
-let cameraPosition = [-269.4296871180335, 38.1232870679158, cameraZoomOffset];
+let cameraPosition = [-100.05, 210, 110.68];
 let target = [703.8646233146919, 677.0565082486469, -700.0000000000001];
 
 const controlPoints = [
-  [-10.05, 4.5, 11.67],
-  [-18.35, 5.2, 29.85],
-  [-8.11, 5.8, 21.92],
-  [2.15, 4.8, 25.49],
-  [12.24, 1, 23.25],
-  [26.32, -0.5, 23.55],
-  [23.77, 1.5, 7.69],
-  [19.29, 0.8, -14.12],
-  [4.95, -0.2, -54.78],
-  [-11.05, 2.5, -42.89],
-  [-23.89, -1, -28.57],
-  [-6.72, 0.7, -4.18],
-  [-10.05, 4.5, 11.67],
+  [-100.05, 210, 110.68],
+  [-180.23, 210, 290.25],
+  [-80.26, 210, 210.93],
+  [20.65, 210, 250.24],
+  [120.24, 210, 230.67],
+  [260.48, 210, 230.34],
+  [230.76, 210, 70.25],
+  [190.45, 210, -140.14],
+  [40.96, 210, -540.45],
+  [-110.89, 210, -420.13],
+  [-230.56, 210, -280.12],
+  [-60.59, 210, -40.23],
+  [-100.05, 210, 110.67],
 ];
 
-//tree settings
-const treesPosition = TREES_POSTION;
+//ball settings
+
+let spherePosition = [...cameraPosition];
+let sphereDirection = [0, 0, -1];
+let isShooting = false; // Flag to prevent rapid shooting
+
+const lightDirection = [-1, 3, 5];
+const lightColor = [1.0, 1.0, 1.0];
+const ambientColor = [0.2, 0.2, 0.2];
 
 async function main() {
   const { gl, meshProgramInfo } = initializeWorld();
+
+  // ------ draw height map terrain --------
+
+  const ballProgramInfo = twgl.createProgramInfo(gl, [ballVs, ballFs]);
+  const terrainProgramInfo = twgl.createProgramInfo(gl, [terrainVs, terrainFs]);
+  const terrainBufferInfo = twgl.primitives.createPlaneBufferInfo(
+    gl,
+    1000,
+    1000,
+    200,
+    200
+  );
+
+  const heightMapTexture = twgl.createTexture(gl, {
+    src: "src/assets/heightmap/height.png",
+    minMag: gl.NEAREST,
+    wrap: gl.CLAMP_TO_EDGE,
+  });
+
+  const normalMapTexture = twgl.createTexture(gl, {
+    src: "src/assets/heightmap/diffuse.png",
+    minMag: gl.NEAREST,
+    wrap: gl.CLAMP_TO_EDGE,
+  });
+
+  let terrain_worldMatrix = m4.identity();
+
+  // ----- draw skybox ---------
+
+  const skyboxProgramInfo = twgl.createProgramInfo(gl, [skyboxVS, skyboxFS]);
+  const quadBufferInfo = twgl.primitives.createXYQuadBufferInfo(gl);
+
+  const skyboxTexture = twgl.createTexture(gl, {
+    target: gl.TEXTURE_CUBE_MAP,
+    src: [
+      "src/assets/skybox/right.bmp",
+      "src/assets/skybox/left.bmp",
+      "src/assets/skybox/top.bmp",
+      "src/assets/skybox/bottom.bmp",
+      "src/assets/skybox/front.bmp",
+      "src/assets/skybox/back.bmp",
+    ],
+    min: gl.LINEAR_MIPMAP_LINEAR,
+  });
+
+  // ------ draw ball --------
+
+  let sphereWorldMatrix = m4.identity();
+
+  function createSphereWithLighting(
+    gl,
+    position,
+    radius,
+    lightDirection,
+    lightColor,
+    ambientColor,
+    projectionMatrix,
+    viewMatrix
+  ) {
+    const sphereBufferInfo = twgl.primitives.createSphereBufferInfo(
+      gl,
+      radius,
+      24,
+      12
+    );
+
+    sphereWorldMatrix = m4.identity();
+    sphereWorldMatrix = m4.translate(sphereWorldMatrix, position);
+
+    const normalMatrix = m4.transpose(m4.inverse(sphereWorldMatrix));
+
+    const uniforms = {
+      u_projection: projectionMatrix,
+      u_view: viewMatrix,
+      u_world: sphereWorldMatrix,
+      u_normalMatrix: normalMatrix,
+      u_lightDirection: lightDirection,
+      u_lightColor: lightColor,
+      u_ambientColor: ambientColor,
+    };
+
+    gl.useProgram(ballProgramInfo.program);
+
+    twgl.setBuffersAndAttributes(gl, ballProgramInfo, sphereBufferInfo);
+    twgl.setUniforms(ballProgramInfo, uniforms);
+
+    twgl.drawBufferInfo(gl, sphereBufferInfo);
+  }
+
+  // ------ load objects --------
 
   const birdData = await birdbject(gl, meshProgramInfo);
 
   const buildingData = await buildingObject(gl, meshProgramInfo);
 
-  const treeData = await treeObject(gl, meshProgramInfo);
-
   var fieldOfViewRadians = degToRad(60);
-
-  // ------ Terrain Controls --------
 
   // ------ Camera Controls --------
 
@@ -46,7 +138,7 @@ async function main() {
 
   let isMouseDragging = true;
 
-  canvas.addEventListener("mousedown", () => {
+  canvas.addEventListener("mousedown", (e) => {
     isMouseDragging = true;
   });
 
@@ -60,36 +152,26 @@ async function main() {
     }
   });
 
+  document.addEventListener(
+    "keydown",
+    (e) => {
+      if (e.code === "Space" && !isShooting) {
+        // Shoot the ball
+        isShooting = true;
+
+        console.log("Sphere Position:", spherePosition);
+        // Set a timeout to reset isShooting after a delay (e.g., 1 second)
+        setTimeout(() => {
+          isShooting = false;
+        }, 1000); // 1000 milliseconds (1 second)
+      }
+    },
+    false
+  );
+
   // ------ Objects Controls --------
 
-  function updateCameraAnim(e) {
-    return function (event, ui) {
-      t = ui.value / 100;
-    };
-  }
-
-  function updateSliderValue() {
-    slider.updateValue(t * 100);
-  }
-
-  const slider = webglLessonsUI.setupSlider("#animation", {
-    value: t * 100,
-    slide: updateCameraAnim(),
-    min: 0,
-    max: 100,
-  });
-
   console.log(gl.getError());
-
-  const startButton = document.getElementById("start");
-
-  startButton.addEventListener("click", () => {
-    if (startButton.textContent === "Start") {
-      startButton.textContent = "Stop";
-    } else {
-      startButton.textContent = "Start";
-    }
-  });
 
   var then = 0;
   var birdMovement = 0;
@@ -116,19 +198,14 @@ async function main() {
 
     // Camera controls
     if (t < 1) {
-      if (startButton.textContent === "Stop") {
-        t = deltaTime * 0.1 + t;
-        updateSliderValue();
-      }
+      t = deltaTime * 0.1 + t;
       const { position, tangent } = cubicBezierPointAndTangent(
         controlPoints,
         t
       );
 
-      updateCameraAnim();
       cameraPosition = position;
-    } else if (t >= 1 && startButton.textContent === "Stop") {
-      updateSliderValue();
+    } else if (t >= 1) {
       t = 0;
     }
 
@@ -137,6 +214,7 @@ async function main() {
     camera = m4.lookAt(cameraPosition, target, [0, 1, 0]);
 
     var viewMatrix = m4.inverse(camera);
+    let viewDirection = m4.copy(camera);
 
     const sharedUniforms = {
       u_lightDirection: m4.normalize([-1, 3, 5]),
@@ -156,44 +234,6 @@ async function main() {
     u_world = m4.translate(u_world, ...buildingData.offset);
 
     for (let { bufferInfo, vao, material } of buildingData.parts) {
-      gl.bindVertexArray(vao);
-      twgl.setUniforms(
-        meshProgramInfo,
-        {
-          u_world,
-        },
-        material
-      );
-      twgl.drawBufferInfo(gl, bufferInfo);
-    }
-
-    for (let i = 0; i < 50; i++) {
-      let u_world = m4.identity();
-      const offset = treesPosition[i];
-
-      u_world = m4.scale(u_world, ...treeData.scale);
-      u_world = m4.translate(u_world, ...offset);
-
-      for (let { bufferInfo, vao, material } of treeData.parts) {
-        gl.bindVertexArray(vao);
-        twgl.setUniforms(
-          meshProgramInfo,
-          {
-            u_world,
-          },
-          material
-        );
-        twgl.drawBufferInfo(gl, bufferInfo);
-      }
-    }
-
-    // Draw Tree
-
-    u_world = m4.identity();
-    u_world = m4.scale(u_world, ...treeData.scale);
-    u_world = m4.translate(u_world, ...treeData.offset);
-
-    for (let { bufferInfo, vao, material } of treeData.parts) {
       gl.bindVertexArray(vao);
       twgl.setUniforms(
         meshProgramInfo,
@@ -280,6 +320,62 @@ async function main() {
       );
       twgl.drawBufferInfo(gl, bufferInfo);
     }
+
+    // ------ Draw terrain --------
+
+    gl.useProgram(terrainProgramInfo.program);
+    twgl.setBuffersAndAttributes(gl, terrainProgramInfo, terrainBufferInfo);
+    twgl.setUniforms(terrainProgramInfo, sharedUniforms);
+    twgl.setUniformsAndBindTextures(terrainProgramInfo, {
+      u_world: terrain_worldMatrix,
+      displacementMap: heightMapTexture,
+      normalMap: normalMapTexture,
+    });
+    twgl.drawBufferInfo(gl, terrainBufferInfo);
+
+    // ------ Draw balls --------
+
+    if (isShooting) {
+      // Move the ball in the shooting direction
+      const ballSpeed = 10.0 * deltaTime; // Adjust the speed as needed
+      spherePosition[0] += sphereDirection[0] * ballSpeed;
+      spherePosition[1] += sphereDirection[1] * ballSpeed;
+      spherePosition[2] += sphereDirection[2] * ballSpeed;
+
+      // Check if the ball has gone too far and stop shooting
+      if (spherePosition[2] < -1000) {
+        isShooting = false;
+      }
+
+      // Render the moving ball
+      createSphereWithLighting(
+        gl,
+        spherePosition,
+        10,
+        lightDirection,
+        lightColor,
+        ambientColor,
+        projectionMatrix,
+        viewMatrix
+      );
+    }
+
+    // ------ Draw skybox --------
+
+    viewDirection[12] = 0;
+    viewDirection[13] = 0;
+    viewDirection[14] = 0;
+
+    gl.depthFunc(gl.LEQUAL);
+    gl.useProgram(skyboxProgramInfo.program);
+    twgl.setBuffersAndAttributes(gl, skyboxProgramInfo, quadBufferInfo);
+    twgl.setUniformsAndBindTextures(skyboxProgramInfo, {
+      u_viewDirectionProjectionInverse: m4.inverse(
+        m4.multiply(projectionMatrix, viewDirection)
+      ),
+      u_skybox: skyboxTexture,
+    });
+    twgl.drawBufferInfo(gl, quadBufferInfo);
 
     requestAnimationFrame(render);
   }

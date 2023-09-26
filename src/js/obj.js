@@ -1,3 +1,4 @@
+var ballPosition = [0, -1000, 0];
 function parseOBJ(text) {
   const objPositions = [[0, 0, 0]];
   const objTexcoords = [[0, 0]];

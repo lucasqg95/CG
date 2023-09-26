@@ -27,3 +27,13 @@ export function randomBetweenMinus20And20() {
   } while (randomNumber >= -10 && randomNumber < 10);
   return randomNumber;
 }
+
+export function loadImage(url) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = (_) => resolve(img);
+    img.onerror = reject;
+    img.crossOrigin = "anonymous";
+    img.src = url;
+  });
+}

@@ -12,7 +12,7 @@ export async function buildingObject(gl, meshProgramInfo) {
   const textureUrl = "/src/assets/objects/building/building.obj"; // Change the texture URL
   const objectData = await loadObject(gl, meshProgramInfo, textureUrl); // Load the texture
 
-  const offset = [0, -4, -20];
+  const offset = [100, 50, -20];
   const scale = [3, 3, 3];
 
   return { ...objectData, scale, offset };
@@ -22,7 +22,7 @@ export async function birdbject(gl, meshProgramInfo) {
   const textureUrl = "/src/assets/objects/bird/bird.obj"; // Change the texture URL
   const objectData = await loadObject(gl, meshProgramInfo, textureUrl); // Load the texture
 
-  const offset = [-400, 100, 0];
+  const offset = [-400, 300, 0];
   const scale = [1, 1, 1];
 
   return { ...objectData, scale, offset };
