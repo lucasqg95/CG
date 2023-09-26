@@ -4,34 +4,30 @@ import { degToRad } from "./utils.js";
 
 //camera settings
 let t = 0;
-let cameraPosition = [-100.05, 210, 110.68];
+let cameraPosition = [-100.05, 210, 160.68];
 let target = [703.8646233146919, 677.0565082486469, -700.0000000000001];
 
 const controlPoints = [
-  [-100.05, 210, 110.68],
-  [-180.23, 210, 290.25],
-  [-80.26, 210, 210.93],
-  [20.65, 210, 250.24],
-  [120.24, 210, 230.67],
-  [260.48, 210, 230.34],
-  [230.76, 210, 70.25],
-  [190.45, 210, -140.14],
-  [40.96, 210, -540.45],
-  [-110.89, 210, -420.13],
-  [-230.56, 210, -280.12],
-  [-60.59, 210, -40.23],
-  [-100.05, 210, 110.67],
+  [-100.05, 210, 160.68],
+  [-180.23, 210, 350.25],
+  [-80.26, 210, 260.93],
+  [20.65, 210, 300.24],
+  [120.24, 210, 280.67],
+  [260.48, 210, 280.34],
+  [230.76, 210, 120.25],
+  [190.45, 210, -190.14],
+  [40.96, 210, -590.45],
+  [-110.89, 210, -470.13],
+  [-230.56, 210, -330.12],
+  [-60.59, 210, -90.23],
+  [-100.05, 210, 160.67],
 ];
 
 //ball settings
 
 let spherePosition = [...cameraPosition];
 let sphereDirection = [0, 0, -1];
-let isShooting = false; // Flag to prevent rapid shooting
-
-const lightDirection = [-1, 3, 5];
-const lightColor = [1.0, 1.0, 1.0];
-const ambientColor = [0.2, 0.2, 0.2];
+let isShooting = false;
 
 async function main() {
   const { gl, meshProgramInfo } = initializeWorld();
@@ -80,50 +76,6 @@ async function main() {
     min: gl.LINEAR_MIPMAP_LINEAR,
   });
 
-  // ------ draw ball --------
-
-  let sphereWorldMatrix = m4.identity();
-
-  function createSphereWithLighting(
-    gl,
-    position,
-    radius,
-    lightDirection,
-    lightColor,
-    ambientColor,
-    projectionMatrix,
-    viewMatrix
-  ) {
-    const sphereBufferInfo = twgl.primitives.createSphereBufferInfo(
-      gl,
-      radius,
-      24,
-      12
-    );
-
-    sphereWorldMatrix = m4.identity();
-    sphereWorldMatrix = m4.translate(sphereWorldMatrix, position);
-
-    const normalMatrix = m4.transpose(m4.inverse(sphereWorldMatrix));
-
-    const uniforms = {
-      u_projection: projectionMatrix,
-      u_view: viewMatrix,
-      u_world: sphereWorldMatrix,
-      u_normalMatrix: normalMatrix,
-      u_lightDirection: lightDirection,
-      u_lightColor: lightColor,
-      u_ambientColor: ambientColor,
-    };
-
-    gl.useProgram(ballProgramInfo.program);
-
-    twgl.setBuffersAndAttributes(gl, ballProgramInfo, sphereBufferInfo);
-    twgl.setUniforms(ballProgramInfo, uniforms);
-
-    twgl.drawBufferInfo(gl, sphereBufferInfo);
-  }
-
   // ------ load objects --------
 
   const birdData = await birdbject(gl, meshProgramInfo);
@@ -163,11 +115,15 @@ async function main() {
         // Set a timeout to reset isShooting after a delay (e.g., 1 second)
         setTimeout(() => {
           isShooting = false;
-        }, 1000); // 1000 milliseconds (1 second)
+        }, 10000); // 1000 milliseconds (1 second)
       }
     },
     false
   );
+
+  // ------ Ball Controls --------
+
+  const ballBufferInfo = twgl.primitives.createSphereBufferInfo(gl, 10, 12, 6);
 
   // ------ Objects Controls --------
 
@@ -321,6 +277,79 @@ async function main() {
       twgl.drawBufferInfo(gl, bufferInfo);
     }
 
+    u_world = m4.identity();
+    u_world = m4.scale(u_world, ...birdData.scale);
+    u_world = m4.translate(
+      u_world,
+      ...[
+        ((birdMovement - 0) / (1 - 0)) * (50 - birdData.offset[0] + 50) +
+          birdData.offset[0],
+        birdData.offset[1] - 30,
+        birdData.offset[2] + 50,
+      ]
+    );
+
+    for (let { bufferInfo, vao, material } of birdData.parts) {
+      gl.bindVertexArray(vao);
+      twgl.setUniforms(
+        meshProgramInfo,
+        {
+          u_world,
+        },
+        material
+      );
+      twgl.drawBufferInfo(gl, bufferInfo);
+    }
+
+    u_world = m4.identity();
+    u_world = m4.scale(u_world, ...birdData.scale);
+    u_world = m4.translate(
+      u_world,
+      ...[
+        ((birdMovement - 0) / (1 - 0)) * (100 - birdData.offset[0] + 100) +
+          birdData.offset[0],
+        birdData.offset[1],
+        birdData.offset[2] + 80,
+      ]
+    );
+
+    for (let { bufferInfo, vao, material } of birdData.parts) {
+      gl.bindVertexArray(vao);
+      twgl.setUniforms(
+        meshProgramInfo,
+        {
+          u_world,
+        },
+        material
+      );
+      twgl.drawBufferInfo(gl, bufferInfo);
+    }
+
+    u_world = m4.identity();
+    u_world = m4.scale(u_world, ...birdData.scale);
+    u_world = m4.translate(
+      u_world,
+      ...[
+        ((birdMovement - 0) / (1 - 0)) * (150 - birdData.offset[0] + 150) +
+          birdData.offset[0] +
+          100,
+        210,
+        0,
+      ]
+    );
+
+    for (let { bufferInfo, vao, material } of birdData.parts) {
+      gl.bindVertexArray(vao);
+      twgl.setUniforms(
+        meshProgramInfo,
+        {
+          u_world,
+        },
+        material
+      );
+      twgl.drawBufferInfo(gl, bufferInfo);
+    }
+
     // ------ Draw terrain --------
 
     gl.useProgram(terrainProgramInfo.program);
@@ -335,29 +364,27 @@ async function main() {
 
     // ------ Draw balls --------
 
+    gl.useProgram(ballProgramInfo.program);
+
+    u_world = m4.identity();
+    u_world = m4.translate(u_world, ...[0, 210, 0]);
+    u_world = m4.scale(u_world, ...[10, 10, 10]);
+
+    twgl.setBuffersAndAttributes(gl, ballProgramInfo, ballBufferInfo);
+    twgl.setUniforms(ballProgramInfo, sharedUniforms);
+    twgl.setUniforms(ballProgramInfo, {
+      u_projection: projectionMatrix,
+      u_world,
+      u_model: viewMatrix,
+    });
+    twgl.drawBufferInfo(gl, ballBufferInfo);
+
+    // ------ Update ball position --------
+
     if (isShooting) {
-      // Move the ball in the shooting direction
-      const ballSpeed = 10.0 * deltaTime; // Adjust the speed as needed
-      spherePosition[0] += sphereDirection[0] * ballSpeed;
-      spherePosition[1] += sphereDirection[1] * ballSpeed;
-      spherePosition[2] += sphereDirection[2] * ballSpeed;
-
-      // Check if the ball has gone too far and stop shooting
-      if (spherePosition[2] < -1000) {
-        isShooting = false;
-      }
-
-      // Render the moving ball
-      createSphereWithLighting(
-        gl,
-        spherePosition,
-        10,
-        lightDirection,
-        lightColor,
-        ambientColor,
-        projectionMatrix,
-        viewMatrix
-      );
+      spherePosition[0] += sphereDirection[0] * 10;
+      spherePosition[1] += sphereDirection[1] * 10;
+      spherePosition[2] += sphereDirection[2] * 10;
     }
 
     // ------ Draw skybox --------
